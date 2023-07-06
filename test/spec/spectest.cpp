@@ -34,36 +34,36 @@ namespace {
 using namespace std::literals;
 using namespace WasmEdge;
 
-
 void resolveRegister(std::map<std::string, std::string> &Alias,
-                     simdjson::ondemand::array &CmdArray) {
-  simdjson::ondemand::array_iterator ItMod = CmdArray.begin();
-  CmdArray.reset();
-  for (simdjson::ondemand::array_iterator It = CmdArray.begin();
-       It != CmdArray.end(); ++It) {
-    std::string_view CmdType = (*It)["type"];
-    //
+                     simdjson::ondemand::array CmdArray) {
+  std::string_view OrgName, Mod;
+  for (simdjson::ondemand::object Obj: CmdArray) {
+    //std::cerr << Obj.raw_json() << "\n";
+    std::string_view CmdType = Obj["type"];
+    int flag = 0;
+    //Obj.reset();
     if (CmdType == "module"sv) {
-      ItMod = It;
+      if (Obj["name"].get(OrgName)) {
+        OrgName = {};
+      }
+      Mod = Obj["line"].raw_json_token();
     }
     else if (CmdType == "register"sv) {
-      simdjson::ondemand::value NewNameStr;
-      std::string_view Test;
-      if (!(*It).get_object()["as"].get(NewNameStr)){
-        Test = NewNameStr.get_string();
+      //Mod.reset(); 
+      std::string_view NewNameStr = Obj["as"];
+      std::string_view Value;
+      if (!Obj["name"].get(Value)) {
+        Alias.emplace(std::string(Value), std::string(NewNameStr));    
+      }
+      else if (!OrgName.empty()) {
+        flag = 1;
+        Alias.emplace(std::string(OrgName), std::string(NewNameStr));
+      }
+      if (!OrgName.empty() && flag == 0) {
+        Alias.emplace(OrgName, NewNameStr);
       }
       else {
-        break;
-      }
-      std::string_view Value;
-      auto OrgName = (*ItMod).find_field_unordered("name");
-      if (!(*It)["name"].get(Value)) {
-        std::string_view Name = Value;
-        Alias.emplace(std::string(Name), std::string(Test));
-      }
-      else if (OrgName.error() != simdjson::NO_SUCH_FIELD) {
-        std::string_view Name = OrgName.get_string();
-        Alias.emplace(std::string(Name), std::string(Test));
+        Alias.emplace(Mod, NewNameStr);
       }
     }
   }
@@ -95,95 +95,88 @@ std::pair<std::vector<WasmEdge::ValVariant>, std::vector<WasmEdge::ValType>>
 parseValueList(simdjson::ondemand::array &Args) {
   std::vector<WasmEdge::ValVariant> Result;
   std::vector<WasmEdge::ValType> ResultTypes;
-  if (Args.count_elements() > 0) {
-    Result.reserve(Args.count_elements());
-    ResultTypes.reserve(Args.count_elements());
-    for (auto Element: Args) {
-      std::string_view Type = Element["type"];
-      auto ValueNode = Element["value"];
-      switch (ValueNode.type())
-      {
-      case simdjson::ondemand::json_type::string:
-        {std::string_view Value = ValueNode.value();
-        if (Type == "externref"sv) {
-          if (Value == "null"sv) {
-            Result.emplace_back(WasmEdge::UnknownRef());
-          } else {
-            // Add 0x1 uint32_t prefix in this externref index case.
-            Result.emplace_back(WasmEdge::ExternRef(
-                reinterpret_cast<void *>(std::stoul(std::string(Value)) + 0x100000000ULL)));
-          }
-          ResultTypes.emplace_back(WasmEdge::ValType::ExternRef);
-        } else if (Type == "funcref"sv) {
-          if (Value == "null"sv) {
-            Result.emplace_back(WasmEdge::UnknownRef());
-          } else {
-            // Add 0x1 uint32_t prefix in this funcref index case.
-            Result.emplace_back(WasmEdge::FuncRef(
-                reinterpret_cast<WasmEdge::Runtime::Instance::FunctionInstance *>(
-                    std::stoul(std::string(Value)) + 0x100000000ULL)));
-          }
-          ResultTypes.emplace_back(WasmEdge::ValType::FuncRef);
-        } else if (Type == "i32"sv) {
-          Result.emplace_back(static_cast<uint32_t>(std::stoul(std::string(Value))));
-          ResultTypes.emplace_back(WasmEdge::ValType::I32);
-        } else if (Type == "f32"sv) {
-          Result.emplace_back(static_cast<uint32_t>(std::stoul(std::string(Value))));
-          ResultTypes.emplace_back(WasmEdge::ValType::F32);
-        } else if (Type == "i64"sv) {
-          Result.emplace_back(static_cast<uint64_t>(std::stoull(std::string(Value))));
-          ResultTypes.emplace_back(WasmEdge::ValType::I64);
-        } else if (Type == "f64"sv) {
-          Result.emplace_back(static_cast<uint64_t>(std::stoull(std::string(Value))));
-          ResultTypes.emplace_back(WasmEdge::ValType::F64);
+  Result.reserve(Args.count_elements());
+  ResultTypes.reserve(Args.count_elements());
+  //Args.reset();
+  for (simdjson::ondemand::object Element: Args) {
+    std::string_view Type = Element["type"];
+    simdjson::ondemand::array ValueNodeArray;
+    if (!Element["value"].get(ValueNodeArray)) {
+      WasmEdge::uint64x2_t I64x2;
+      std::string_view LaneType = Element["lane_type"];
+      ValueNodeArray.reset();
+      if (LaneType == "i64"sv || LaneType == "f64"sv) {
+        size_t I = 0;
+        for (std::string_view X: ValueNodeArray){
+          I64x2[I] = std::stoull(std::string(X));
+          I++;
+        }
+      } else if (LaneType == "i32"sv || LaneType == "f32"sv) {
+        using uint32x4_t = uint32_t __attribute__((vector_size(16)));
+        uint32x4_t I32x4 = {0};
+        size_t I = 0;
+        for (std::string_view X: ValueNodeArray){
+          I32x4[I] = std::stoull(std::string(X));
+          I++;
+        }
+        I64x2 = reinterpret_cast<WasmEdge::uint64x2_t>(I32x4);
+      } else if (LaneType == "i16"sv) {
+        using uint16x8_t = uint16_t __attribute__((vector_size(16)));
+        uint16x8_t I16x8 = {0};
+        size_t I = 0;
+        for (std::string_view X: ValueNodeArray){
+          I16x8[I] = std::stoull(std::string(X));
+          I++;
+        }
+        I64x2 = reinterpret_cast<WasmEdge::uint64x2_t>(I16x8);
+      } else if (LaneType == "i8"sv) {
+        using uint8x16_t = uint8_t __attribute__((vector_size(16)));
+        uint8x16_t I8x16 = {0};
+        size_t I = 0;
+        for (std::string_view X: ValueNodeArray){
+          I8x16[I] = std::stoull(std::string(X));
+          I++;
+        }
+        I64x2 = reinterpret_cast<WasmEdge::uint64x2_t>(I8x16);
+      }
+      Result.emplace_back(I64x2);
+      ResultTypes.emplace_back(WasmEdge::ValType::V128);
+    }
+    else {
+      std::string_view Value = Element["value"];
+      if (Type == "externref"sv) {
+        if (Value == "null"sv) {
+          Result.emplace_back(WasmEdge::UnknownRef());
         } else {
-          assumingUnreachable();
+            // Add 0x1 uint32_t prefix in this externref index case.
+          Result.emplace_back(WasmEdge::ExternRef(
+                reinterpret_cast<void *>(std::stoul(std::string(Value)) + 0x100000000ULL)));
         }
-        break;}
-      case simdjson::ondemand::json_type::array:
-        {WasmEdge::uint64x2_t I64x2;
-        std::string_view LaneType = Element["lane_type"];
-        simdjson::ondemand::array ValueNodeArray = ValueNode.value();
-        if (LaneType == "i64"sv || LaneType == "f64"sv) {
-          size_t I = 0;
-          for (std::string_view X: ValueNodeArray){
-            I64x2[I] = std::stoull(std::string(X));
-            I++;
+        ResultTypes.emplace_back(WasmEdge::ValType::ExternRef);
+      } else if (Type == "funcref"sv) {
+        if (Value == "null"sv) {
+          Result.emplace_back(WasmEdge::UnknownRef());
+        } else {
+          // Add 0x1 uint32_t prefix in this funcref index case.
+          Result.emplace_back(WasmEdge::FuncRef(
+                reinterpret_cast<WasmEdge::Runtime::Instance::FunctionInstance *>(
+                  std::stoul(std::string(Value)) + 0x100000000ULL)));
           }
-        } else if (LaneType == "i32"sv || LaneType == "f32"sv) {
-          using uint32x4_t = uint32_t __attribute__((vector_size(16)));
-          uint32x4_t I32x4 = {0};
-          size_t I = 0;
-          for (std::string_view X: ValueNodeArray){
-            I32x4[I] = std::stoull(std::string(X));
-            I++;
-          }
-          I64x2 = reinterpret_cast<WasmEdge::uint64x2_t>(I32x4);
-        } else if (LaneType == "i16"sv) {
-          using uint16x8_t = uint16_t __attribute__((vector_size(16)));
-          uint16x8_t I16x8 = {0};
-          size_t I = 0;
-          for (std::string_view X: ValueNodeArray){
-            I16x8[I] = std::stoull(std::string(X));
-            I++;
-          }
-          I64x2 = reinterpret_cast<WasmEdge::uint64x2_t>(I16x8);
-        } else if (LaneType == "i8"sv) {
-          using uint8x16_t = uint8_t __attribute__((vector_size(16)));
-          uint8x16_t I8x16 = {0};
-          size_t I = 0;
-          for (std::string_view X: ValueNodeArray){
-            I8x16[I] = std::stoull(std::string(X));
-            I++;
-          }
-          I64x2 = reinterpret_cast<WasmEdge::uint64x2_t>(I8x16);
-        }
-        Result.emplace_back(I64x2);
-        ResultTypes.emplace_back(WasmEdge::ValType::V128);
-        break;}
-      default:
+        ResultTypes.emplace_back(WasmEdge::ValType::FuncRef);
+      } else if (Type == "i32"sv) {
+        Result.emplace_back(static_cast<uint32_t>(std::stoul(std::string(Value))));
+        ResultTypes.emplace_back(WasmEdge::ValType::I32);
+      } else if (Type == "f32"sv) {
+        Result.emplace_back(static_cast<uint32_t>(std::stoul(std::string(Value))));
+        ResultTypes.emplace_back(WasmEdge::ValType::F32);
+      } else if (Type == "i64"sv) {
+        Result.emplace_back(static_cast<uint64_t>(std::stoull(std::string(Value))));
+        ResultTypes.emplace_back(WasmEdge::ValType::I64);
+      } else if (Type == "f64"sv) {
+        Result.emplace_back(static_cast<uint64_t>(std::stoull(std::string(Value))));
+        ResultTypes.emplace_back(WasmEdge::ValType::F64);
+      } else {
         assumingUnreachable();
-        break;
       }
     }
   }
@@ -193,36 +186,27 @@ parseValueList(simdjson::ondemand::array &Args) {
 std::vector<std::pair<std::string, std::string>>
 parseExpectedList(simdjson::ondemand::array &Args) {
   std::vector<std::pair<std::string, std::string>> Result;
-  if (Args.count_elements() > 0){
     Result.reserve(Args.count_elements());
-    for (auto Element : Args) {
+    simdjson::ondemand::array ValueNodeArray;
+    for (simdjson::ondemand::object Element : Args) {
       std::string_view Type = Element["type"];
-      auto ValueNode = Element["value"];
-      switch (ValueNode.type())
-      {
-      case simdjson::ondemand::json_type::string:
-        {std::string_view Value = ValueNode.value();
-        Result.emplace_back(std::string(Value), Value);
-        break;}
-      case simdjson::ondemand::json_type::array:
-        {std::string StrValue;
+      if (!Element["value"].get(ValueNodeArray)){
+        std::string StrValue;
         std::string_view LaneType = Element["lane_type"];
-        simdjson::ondemand::array ValueNodeArray = ValueNode.value();
+        ValueNodeArray.reset();
         for (std::string_view X: ValueNodeArray) {
           StrValue += std::string(X);
           StrValue += ' ';
         }
         StrValue.pop_back();
-        std::string FullType = std::string(Type) + std::string(LaneType);
-        Result.emplace_back(FullType, std::move(StrValue));
-        break;}
-      
-      default:
-        assumingUnreachable();
-        break;
+        Result.emplace_back(std::string(Type) + std::string(LaneType), StrValue);
+      }
+      else {
+        //Element.reset();
+        std::string_view Value = Element["value"];
+        Result.emplace_back(std::string(Type), Value);
       }
     }
-  }
   return Result;
 }
 
@@ -486,16 +470,14 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
   simdjson::ondemand::parser parser;
   simdjson::padded_string JSON = simdjson::padded_string::load(FName);
   auto Document = parser.iterate(JSON);
-  simdjson::ondemand::object Doc = Document.get_object();
 
   std::map<std::string, std::string> Alias;
   std::string LastModName;
 
   // Helper function to get module name.
   auto GetModuleName = [&](simdjson::ondemand::object &Action) -> std::string {
-    simdjson::ondemand::value Module;
-    if (!Action["module"].get(Module)) {
-      std::string_view ModName = Module.get_string();
+    std::string_view ModName;
+    if (!Action["module"].get(ModName)) {
       if (auto It = Alias.find(std::string(ModName)); It != Alias.end()) {
         // If module name is aliased, use the aliased name.
         return It->second;
@@ -512,11 +494,9 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
     simdjson::ondemand::array Args = Action["args"];
     const auto Params = parseValueList(Args);
     const auto Returns = parseExpectedList(Expected);
-
     // Invoke function of named module. Named modules are registered in Store
     // Manager. Anonymous modules are instantiated in VM.
-    const std::string FieldData = std::string(Field);
-    if (auto Res = onInvoke(ModName, FieldData, Params.first, Params.second)) {
+    if (auto Res = onInvoke(ModName, std::string(Field), Params.first, Params.second)) {
       // Check value.
       EXPECT_TRUE(compares(Returns, *Res));
     } else {
@@ -528,7 +508,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
   auto Get = [&](simdjson::ondemand::object &Action,
                  simdjson::ondemand::array &Expected, uint64_t LineNumber) {
     const auto ModName = GetModuleName(Action);
-    const std::string_view Field = Action["field"];
+    std::string_view Field = Action["field"];
     const auto Returns = parseExpectedList(Expected);
 
     if (auto Res = onGet(ModName, std::string(Field))) {
@@ -549,7 +529,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
   auto TrapInvoke = [&](simdjson::ondemand::object &Action, const std::string &Text,
                         uint64_t LineNumber) {
     const auto ModName = GetModuleName(Action);
-    const std::string_view Field = Action["field"].get_string();
+    const std::string_view Field = Action["field"];
     simdjson::ondemand::array Args = Action["args"].get_array();
     const auto Params = parseValueList(Args);
 
@@ -582,25 +562,37 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
   
   // Command processing. Return true for expected result.
     auto RunCommand = [&](simdjson::ondemand::object &Cmd) {
-      // Line number in wast: Cmd["line"].Get<uint32_t>()
-        std::string_view TypeField = Cmd["type"].get_string();
+        std::string_view TypeField = Cmd["type"];
+        simdjson::ondemand::object Action;
+        simdjson::ondemand::array Expected;
+        uint64_t LineNumber;
         switch (resolveCommand(TypeField)) {
         case SpecTest::CommandID::Module: {
-          std::string_view Name = Cmd["filename"].get_string();
+          std::string_view Name = Cmd["filename"];
           const auto FileName = (TestsuiteRoot / Proposal / UnitName /
                                 Name)
                                     .u8string();
-          const uint64_t LineNumber = Cmd["line"].get_uint64();
-          simdjson::ondemand::value TempName {};
+          LineNumber = Cmd["line"];
+          std::string_view LineStr = Cmd["line"].raw_json_token();
+          std::string_view TempName;
+          //Cmd.reset();
           if (!Cmd["name"].get(TempName)) {
             // Module has name. Register module with module name.
-            std::string_view SVName = Cmd["name"].get_string();
-            LastModName = std::string(SVName);
-          } else {
-            // Instantiate the anonymous module.
+            if (auto It = Alias.find(std::string(TempName)); It != Alias.end()){
+              LastModName = (It->second);
+            }
+            else {
+              LastModName = (TempName);
+            }
+          }
+          else if (auto It = Alias.find(std::string(LineStr)); 
+                  It != Alias.end()) {
+              LastModName = (It->second);
+          }
+          else {
+            // Instantiate the anonymous module. 
             LastModName.clear();
           }
-
           if (onModule(LastModName, FileName)) {
             EXPECT_TRUE(true);
           } else {
@@ -609,9 +601,9 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
           return;
         }
         case CommandID::Action: {
-          simdjson::ondemand::object Action = Cmd["action"].get_object();
-          simdjson::ondemand::array Expected = Cmd["expected"].get_array();
-          uint64_t LineNumber = Cmd["line"].get_uint64();
+          Action = Cmd["action"].get_object();
+          Expected = Cmd["expected"].get_array();
+          LineNumber = Cmd["line"];
           Invoke(Action, Expected, LineNumber);
           return;
         }
@@ -620,10 +612,11 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
           return;
         }
         case CommandID::AssertReturn: {
-          const uint64_t LineNumber = Cmd["line"].get_uint64();
-          simdjson::ondemand::object Action = Cmd["action"].get_object();
-          simdjson::ondemand::array Expected = Cmd["expected"].get_array();
-          std::string_view ActType = Action["type"].get_string();
+          LineNumber = Cmd["line"];
+          Action = Cmd["action"].get_object();
+          Expected = Cmd["expected"].get_array();
+          Action.reset();
+          std::string_view ActType = Action["type"];
           if (ActType == "invoke"sv) {
             Invoke(Action, Expected, LineNumber);
             return;
@@ -635,9 +628,9 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
           return;
         }
         case CommandID::AssertTrap: {
-          simdjson::ondemand::object Action = Cmd["action"].get_object();
-          std::string_view Text = Cmd["text"].get_string();
-          const uint64_t LineNumber = Cmd["line"].get_uint64();
+          Action = Cmd["action"].get_object();
+          std::string_view Text = Cmd["text"];
+          LineNumber = Cmd["line"];
           TrapInvoke(Action, std::string(Text), LineNumber);
           return;
         }
@@ -656,8 +649,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
           const auto Filename = (TestsuiteRoot / Proposal / UnitName /
                                 Name)
                                     .u8string();
-          std::string_view Text = Cmd["text"];
-          TrapLoad(Filename, std::string(Text));
+          Name = Cmd["text"];
+          TrapLoad(Filename, std::string(Name));
           return;
         }
         case CommandID::AssertInvalid: {
@@ -665,8 +658,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
           const auto Filename = (TestsuiteRoot / Proposal / UnitName /
                                 Name)
                                     .u8string();
-          std::string_view Text = Cmd["text"];
-          TrapValidate(Filename, std::string(Text));
+          Name = Cmd["text"];
+          TrapValidate(Filename, std::string(Name));
           return;
         }
         case CommandID::AssertUnlinkable:
@@ -675,8 +668,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
           const auto Filename = (TestsuiteRoot / Proposal / UnitName /
                                 Name)
                                     .u8string();
-          std::string_view Text = Cmd["text"];
-          TrapInstantiate(Filename, std::string(Text));
+          Name = Cmd["text"];
+          TrapInstantiate(Filename, std::string(Name));
           return;
         }
         default:;
@@ -686,22 +679,17 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName){
       EXPECT_TRUE(false);
     };
 
-  // Get command list.
-    simdjson::ondemand::array CmdArray = Doc["commands"].get_array();
+    //Get command list.
+    simdjson::ondemand::array CmdArray = Document["commands"].get_array();
     // Preprocessing register command.
     resolveRegister(Alias, CmdArray);
+    Document.rewind();
+    CmdArray = Document["commands"].get_array();
     
-    simdjson::ondemand::object Cmd;
     // Iterate commands.
-    for (auto It : CmdArray) {
-      try {
-        Cmd = It.get_object();
-        RunCommand(Cmd);
-      }
-      catch (simdjson::simdjson_error &error) {
-      std::cerr << "JSON error 2: " << error.what() << ": " << Cmd.raw_json() << FName << std::endl;
-        continue; 
-      }
+    for (simdjson::ondemand::object Cmd : CmdArray) {
+      //std::cerr << "Hello" << "\n";
+      RunCommand(Cmd);
     }
 }
 
