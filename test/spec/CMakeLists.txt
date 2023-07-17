@@ -47,7 +47,7 @@ wasmedge_add_library(wasmedgeTestSpec
 
 target_link_libraries(wasmedgeTestSpec
   PUBLIC
-  simdjson::simdjson
+  simdjson
   std::filesystem
   wasmedgeCommon
   ${GTEST_BOTH_LIBRARIES}
