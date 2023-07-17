@@ -17,6 +17,14 @@
 #include "spectest.h"
 #include "common/log.h"
 
+#if _WIN32 || _WIN64
+   #if _WIN64
+     std::cerr << "64 BIT" << "\n";
+  #else
+    std::cerr << "FAILS, SIMDJSON NOT SUPPORTED"
+  #endif
+#endif
+
 #include "simdjson.h"
 #include <algorithm>
 #include <cmath>
