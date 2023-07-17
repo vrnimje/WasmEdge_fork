@@ -18,12 +18,13 @@
 #include "common/log.h"
 
 #if _WIN32 || _WIN64
-  #if _WIN64
-  #define ENV64 1
-  #else
-  #define ENV32 1
-  #endif
+   #if _WIN64         
+      #pragma message(Reminder "WIN 64") 
+   #else         
+      #pragma message(Reminder "WIN 32") 
+   #endif
 #endif
+
 
 #include "simdjson.h"
 #include <algorithm>
