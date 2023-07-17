@@ -19,9 +19,9 @@
 
 #if _WIN32 || _WIN64
    #if _WIN64         
-      #pragma message(Reminder "WIN 64") 
+      #pragma message("WIN 64") 
    #else         
-      #pragma message(Reminder "WIN 32") 
+      #pragma message("WIN 32") 
    #endif
 #endif
 
