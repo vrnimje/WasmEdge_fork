@@ -17,17 +17,6 @@
 #include "spectest.h"
 #include "common/log.h"
 
-#include "simdjson.h"
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <fstream>
-#include <gtest/gtest.h>
-#include <iterator>
-#include <map>
-#include <memory>
-#include <unordered_map>
 
 #ifdef _MSC_VER
 #define SIMDJSON_VISUAL_STUDIO 1
@@ -39,6 +28,18 @@
 #pragma message("Its MSVC")
 #endif // __clang__
 #endif // _MSC_VER
+
+#include "simdjson.h"
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <fstream>
+#include <gtest/gtest.h>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <unordered_map>
 
 namespace {
 

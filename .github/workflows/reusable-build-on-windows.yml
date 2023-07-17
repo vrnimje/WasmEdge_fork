@@ -28,7 +28,7 @@ jobs:
         id: vcpkg
         with:
           pkgs: simdjson
-          triplet: x64-windows
+          triplet: x64-windows-static
           token: ${{ github.token }}
       - uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
         with:
