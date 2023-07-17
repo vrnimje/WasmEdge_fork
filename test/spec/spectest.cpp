@@ -18,10 +18,10 @@
 #include "common/log.h"
 
 #if _WIN32 || _WIN64
-   #if _WIN64
-     std::cerr << "64 BIT" << "\n";
+  #if _WIN64
+  #define ENV64 1
   #else
-    std::cerr << "FAILS, SIMDJSON NOT SUPPORTED"
+  #define ENV32 1
   #endif
 #endif
 
