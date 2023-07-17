@@ -17,18 +17,6 @@
 #include "spectest.h"
 #include "common/log.h"
 
-
-#ifdef _MSC_VER
-#define SIMDJSON_VISUAL_STUDIO 1
-#ifdef __clang__
-// clang under visual studio
-#pragma message("Its clang-cl under VS")
-#else
-// just regular visual studio (best guess)
-#pragma message("Its MSVC")
-#endif // __clang__
-#endif // _MSC_VER
-
 #include "simdjson.h"
 #include <algorithm>
 #include <cmath>
