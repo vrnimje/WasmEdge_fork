@@ -17,15 +17,6 @@
 #include "spectest.h"
 #include "common/log.h"
 
-#if _WIN32 || _WIN64
-   #if _WIN64         
-      #pragma message("WIN 64") 
-   #else         
-      #pragma message("WIN 32") 
-   #endif
-#endif
-
-
 #include "simdjson.h"
 #include <algorithm>
 #include <cmath>
