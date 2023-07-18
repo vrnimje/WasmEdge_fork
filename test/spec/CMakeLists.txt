@@ -35,7 +35,7 @@ FetchContent_Declare(
     -Wno-sign-conversion
     -Wno-extra-semi-stmt
     -Wno-old-style-cast
-    -Wno-error
+    -Wno-error=unused-parameter
     -Wno-conditional-uninitialized
     -Wno-implicit-int-conversion
     -Wno-shorten-64-to-32
