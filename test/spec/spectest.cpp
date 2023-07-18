@@ -17,11 +17,6 @@
 #include "spectest.h"
 #include "common/log.h"
 
-#if _MSVC_VER
-  #pragma warning (push, 0)
-  #pragma warning (pop)
-#endif
-
 #include "simdjson.h"
 #include <algorithm>
 #include <cmath>
