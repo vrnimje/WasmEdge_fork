@@ -19,36 +19,34 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
   GIT_TAG  tags/v3.2.0
   GIT_SHALLOW TRUE)
-
-  get_property(
-    compile_options
-    DIRECTORY
-    PROPERTY COMPILE_OPTIONS
-    )
-  set_property(
-    DIRECTORY
-    APPEND
-    PROPERTY COMPILE_OPTIONS
-    -Wno-undef
-    -Wno-suggest-override
-    -Wno-documentation
-    -Wno-sign-conversion
-    -Wno-extra-semi-stmt
-    -Wno-old-style-cast
-    -Wno-error=unused-parameter
-    -Wno-error=unused-template
-    -Wno-conditional-uninitialized
-    -Wno-implicit-int-conversion
-    -Wno-shorten-64-to-32
-    -Wno-range-loop-bind-reference
-    -Wno-format-nonliteral
-    -Wno-unused-exception-parameter
-    -Wno-unused-member-function
-    )
-  unset(compile_options)
-  set(RAPIDJSON_BUILD_DOC OFF CACHE BOOL "Build SIMDJSON documentation." FORCE)
-  set(RAPIDJSON_BUILD_CXX11 OFF CACHE BOOL "Build RapidJSON with C++11" FORCE)
-  set(RAPIDJSON_BUILD_CXX17 ON CACHE BOOL "Build RapidJSON with C++17" FORCE)
+  if( MSVC )
+    get_property(
+      compile_options
+      DIRECTORY
+      PROPERTY COMPILE_OPTIONS
+      )
+    set_property(
+      DIRECTORY
+      APPEND
+      PROPERTY COMPILE_OPTIONS
+      -Wno-undef
+      -Wno-suggest-override
+      -Wno-documentation
+      -Wno-sign-conversion
+      -Wno-extra-semi-stmt
+      -Wno-old-style-cast
+      -Wno-error=unused-parameter
+      -Wno-error=unused-template
+      -Wno-conditional-uninitialized
+      -Wno-implicit-int-conversion
+      -Wno-shorten-64-to-32
+      -Wno-range-loop-bind-reference
+      -Wno-format-nonliteral
+      -Wno-unused-exception-parameter
+      -Wno-unused-member-function
+      )
+    unset(compile_options)
+  endif( MSVC )
 FetchContent_MakeAvailable(simdjson)
 message(STATUS "Downloading SIMDJSON -- done")
 
