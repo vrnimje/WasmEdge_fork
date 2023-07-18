@@ -29,10 +29,10 @@ FetchContent_Declare(
     DIRECTORY
     APPEND
     PROPERTY COMPILE_OPTIONS
-    -Wno-conditional-uninitialized
-    -Wno-implicit-int-conversion
-    -Wno-zero-as-null-pointer-constant
-    
+    -Wno-undef
+    -Wno-suggest-override
+    -Wno-documentation
+    -Wno-sign-conversion
     )
   unset(compile_options)
   set(RAPIDJSON_BUILD_DOC OFF CACHE BOOL "Build SIMDJSON documentation." FORCE)
