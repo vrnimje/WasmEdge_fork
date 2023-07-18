@@ -33,6 +33,9 @@ FetchContent_Declare(
     -Wno-suggest-override
     -Wno-documentation
     -Wno-sign-conversion
+    -Wno-extra-semi-stmt
+    -Wno-old-style-cast
+    -Wno-unused-parameter
     )
   unset(compile_options)
   set(RAPIDJSON_BUILD_DOC OFF CACHE BOOL "Build SIMDJSON documentation." FORCE)
