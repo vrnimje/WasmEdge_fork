@@ -38,9 +38,17 @@ endforeach()
 wasmedge_add_library(wasmedgeTestSpec
   spectest.cpp
 )
-target_link_libraries(wasmedgeTestSpec SYSTEM
-  simdjson
+
+target_include_directories(wasmedgeTestSpec SYSTEM PUBLIC simdjson)
+
+target_link_libraries(wasmedgeTestSpec
+  PUBLIC
+  simdjson::simdjson
   std::filesystem
   wasmedgeCommon
   ${GTEST_BOTH_LIBRARIES}
 )
+
+target_compile_options(wasmedgeTestSpec PRIVATE -Wno-sign-conversion)
+target_compile_options(wasmedgeTestSpec PRIVATE -Wno-undef)
+target_compile_options(wasmedgeTestSpec PRIVATE -Wno-documentation)
