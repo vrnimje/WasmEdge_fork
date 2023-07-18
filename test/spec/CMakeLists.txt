@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2019-2022 Second State INC
-
 include(FetchContent)
 
 message(STATUS "Downloading the WASM spec test suite")
@@ -31,7 +30,7 @@ wasmedge_add_library(wasmedgeTestSpec
   ../extern/simdjson/simdjson.cpp
 )
 
-target_include_directories(wasmedgeTestSpec SYSTEM INTERFACE ../extern/simdjson)
+target_include_directories(wasmedgeTestSpec SYSTEM PUBLIC ../extern/simdjson)
 
 target_link_libraries(wasmedgeTestSpec
   PUBLIC
