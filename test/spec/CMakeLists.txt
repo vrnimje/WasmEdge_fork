@@ -31,7 +31,7 @@ wasmedge_add_library(wasmedgeTestSpec
   ../extern/simdjson/simdjson.cpp
 )
 
-target_include_directories(wasmedgeTestSpec PRIVATE ../extern/simdjson)
+target_include_directories(wasmedgeTestSpec SYSTEM INTERFACE ../extern/simdjson)
 
 target_link_libraries(wasmedgeTestSpec
   PUBLIC
