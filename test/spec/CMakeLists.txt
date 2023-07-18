@@ -42,6 +42,7 @@ FetchContent_Declare(
     -Wno-range-loop-bind-reference
     -Wno-format-nonliteral
     -Wno-unused-exception-parameter
+    -Wno-unused-member-function
     )
   unset(compile_options)
   set(RAPIDJSON_BUILD_DOC OFF CACHE BOOL "Build SIMDJSON documentation." FORCE)
