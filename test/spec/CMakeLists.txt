@@ -35,12 +35,13 @@ FetchContent_Declare(
     -Wno-sign-conversion
     -Wno-extra-semi-stmt
     -Wno-old-style-cast
-    -Wno-unused
+    -Wno-unused-parameter
     -Wno-conditional-uninitialized
     -Wno-implicit-int-conversion
     -Wno-shorten-64-to-32
     -Wno-range-loop-bind-reference
     -Wno-format-nonliteral
+    -Wno-unused-exception-parameter
     )
   unset(compile_options)
   set(RAPIDJSON_BUILD_DOC OFF CACHE BOOL "Build SIMDJSON documentation." FORCE)
