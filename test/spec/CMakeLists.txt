@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2019-2022 Second State INC
+
+if ( MSVC )
+add_compile_options(/w44101)
+endif( MSVC )
+
 include(FetchContent)
 
 message(STATUS "Downloading the WASM spec test suite")
@@ -48,7 +53,3 @@ target_link_libraries(wasmedgeTestSpec
   wasmedgeCommon
   ${GTEST_BOTH_LIBRARIES}
 )
-
-target_compile_options(wasmedgeTestSpec PRIVATE -Wno-sign-conversion)
-target_compile_options(wasmedgeTestSpec PRIVATE -Wno-undef)
-target_compile_options(wasmedgeTestSpec PRIVATE -Wno-documentation)
