@@ -11,6 +11,16 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(wasmedge_unit_test)
 message(STATUS "Downloading the WASM spec test suite -- done")
 
+message(STATUS "Downloading SIMDJSON")
+include(FetchContent)
+FetchContent_Declare(
+  simdjson
+  GIT_REPOSITORY https://github.com/simdjson/simdjson.git
+  GIT_TAG  tags/v3.2.0
+  GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(simdjson)
+message(STATUS "Downloading SIMDJSON -- done")
+
 function(wasmedge_copy_spec_testsuite proposal)
   message(STATUS "Copying test suite to ${CMAKE_CURRENT_BINARY_DIR}/testSuites/${proposal}")
   file(COPY
@@ -27,13 +37,9 @@ endforeach()
 
 wasmedge_add_library(wasmedgeTestSpec
   spectest.cpp
-  ../extern/simdjson/simdjson.cpp
 )
-
-target_include_directories(wasmedgeTestSpec SYSTEM PUBLIC ../extern/simdjson)
-
-target_link_libraries(wasmedgeTestSpec
-  PUBLIC
+target_link_libraries(wasmedgeTestSpec SYSTEM
+  simdjson
   std::filesystem
   wasmedgeCommon
   ${GTEST_BOTH_LIBRARIES}
