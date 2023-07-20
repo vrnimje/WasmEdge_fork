@@ -691,3 +691,5 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
 }
 
 } // namespace WasmEdge
+
+//test some more stuff
