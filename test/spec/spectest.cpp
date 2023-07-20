@@ -676,13 +676,17 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
   };
 
   // Get command list.
-  simdjson::dom::array CmdArray = Doc["commands"];
-  // Preprocessing register command.
-  resolveRegister(Alias, CmdArray);
+  simdjson::dom::array CmdArray;
 
-  // Iterate commands.
-  for (const simdjson::dom::object &Cmd : CmdArray) {
-    RunCommand(Cmd);
+  if (!Doc["commands"].get(CmdArray)) {
+  
+    // Preprocessing register command.
+    resolveRegister(Alias, CmdArray);
+
+    // Iterate commands.
+    for (const simdjson::dom::object &Cmd : CmdArray) {
+      RunCommand(Cmd);
+    }
   }
 }
 
