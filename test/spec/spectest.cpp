@@ -39,7 +39,7 @@ void resolveRegister(std::map<std::string, std::string> &Alias,
                      simdjson::dom::array CmdArray) {
   std::string_view OrgName;
   uint64_t LastModLine;
-  for (simdjson::dom::object Cmd : CmdArray) {
+  for (const simdjson::dom::object &Cmd : CmdArray) {
     std::string_view CmdType = Cmd["type"];
     bool Replaced = false;
     if (CmdType == "module"sv) {
@@ -100,7 +100,7 @@ parseValueList(const simdjson::dom::array &Args) {
   std::vector<WasmEdge::ValType> ResultTypes;
   Result.reserve(Args.size());
   ResultTypes.reserve(Args.size());
-  for (simdjson::dom::object Element : Args) {
+  for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
     simdjson::dom::array ValueNodeArray;
     if (!Element["value"].get(ValueNodeArray)) {
@@ -193,7 +193,8 @@ parseExpectedList(const simdjson::dom::array &Args) {
   std::vector<std::pair<std::string, std::string>> Result;
   Result.reserve(Args.size());
   simdjson::dom::array ValueNodeArray;
-  for (simdjson::dom::object Element : Args) {
+  std::string_view Value;
+  for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
     if (!Element["value"].get(ValueNodeArray)) {
       std::string StrValue;
@@ -203,15 +204,17 @@ parseExpectedList(const simdjson::dom::array &Args) {
         StrValue += ' ';
       }
       StrValue.pop_back();
-      Result.emplace_back(std::string(Type) + std::string(LaneType), StrValue);
-    } else {
-      std::string_view Value = Element["value"];
+      Result.emplace_back(std::string(Type) + std::string(LaneType), std::move(StrValue));
+    } else if (!Element["value"].get(Value)) {
       Result.emplace_back(std::string(Type), Value);
+    } else {
+      assumingUnreachable();
     }
+    
   }
   return Result;
 }
-
+  
 struct TestsuiteProposal {
   std::string_view Path;
   WasmEdge::Configure Conf;
@@ -471,12 +474,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
           .string();
 
   simdjson::dom::parser parser;
-  simdjson::dom::element Doc;
-  try {
-    Doc = parser.load(FName);
-  } catch (simdjson::error_code &err) {
-    ;
-  }
+  simdjson::dom::element Doc = parser.load(Fname);
 
   std::map<std::string, std::string> Alias;
   std::string LastModName;
@@ -572,7 +570,9 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
 
   // Command processing. Return true for expected result.
   auto RunCommand = [&](const simdjson::dom::object &Cmd) {
-    std::string_view TypeField = Cmd["type"];
+    std::string_view TypeField;
+
+    if (!Cmd["type"].get(Cmd)) {
     switch (resolveCommand(TypeField)) {
     case SpecTest::CommandID::Module: {
       std::string_view Name = Cmd["filename"];
@@ -673,6 +673,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
     }
     // Unknown command.
     EXPECT_TRUE(false);
+    }
   };
 
   // Get command list.
@@ -691,5 +692,3 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
 }
 
 } // namespace WasmEdge
-
-//test some more stuff
