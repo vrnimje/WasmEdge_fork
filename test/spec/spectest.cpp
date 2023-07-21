@@ -474,7 +474,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
           .string();
 
   simdjson::dom::parser parser;
-  simdjson::dom::element Doc = parser.load(Fname);
+  simdjson::dom::element Doc = parser.load(FName);
 
   std::map<std::string, std::string> Alias;
   std::string LastModName;
