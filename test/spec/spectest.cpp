@@ -572,7 +572,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
   auto RunCommand = [&](const simdjson::dom::object &Cmd) {
     std::string_view TypeField;
 
-    if (!Cmd["type"].get(Cmd)) {
+    if (!Cmd["type"].get(TypeField)) {
     switch (resolveCommand(TypeField)) {
     case SpecTest::CommandID::Module: {
       std::string_view Name = Cmd["filename"];
