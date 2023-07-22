@@ -671,9 +671,9 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
     }
     default:;
     }
+    }
     // Unknown command.
     EXPECT_TRUE(false);
-    }
   };
 
   // Get command list.
