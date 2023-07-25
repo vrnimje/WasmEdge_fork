@@ -215,7 +215,7 @@ parseExpectedList(const simdjson::dom::array &Args) {
       StrValue.pop_back();
       Result.emplace_back(std::string(Type) + std::string(LaneType),
                           std::move(StrValue));
-    } else if (simdjson::dom::element_type::STRING) {
+    } else if (Value.type() == simdjson::dom::element_type::STRING) {
       std::string_view ValueStr = Value.get_string();
       Result.emplace_back(std::string(Type), std::string(ValueStr));
     } else {
