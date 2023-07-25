@@ -143,8 +143,9 @@ parseValueList(const simdjson::dom::array &Args) {
       }
       Result.emplace_back(I64x2);
       ResultTypes.emplace_back(WasmEdge::ValType::V128);
+      break;
     }
-    case simdjson::dom::element_type::STRING {
+    case simdjson::dom::element_type::STRING: {
       std::string_view ValueStr = Value;
       if (Type == "externref"sv) {
         if (Value == "null"sv) {
@@ -184,6 +185,7 @@ parseValueList(const simdjson::dom::array &Args) {
       } else {
         assumingUnreachable();
       }
+      break;
     }
     }
   }
