@@ -101,7 +101,7 @@ parseValueList(const simdjson::dom::array &Args) {
   Result.reserve(Args.size());
   ResultTypes.reserve(Args.size());
   for (const simdjson::dom::object &Element : Args) {
-    std::string_view Type = Element["type”];
+    std::string_view Type = Element["type"];
     if (!Element["value"].get(ValueNodeArray)) {
       WasmEdge::uint64x2_t I64x2;
       std::string_view LaneType = Element["lane_type"];
