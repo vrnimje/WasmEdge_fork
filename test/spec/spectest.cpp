@@ -102,7 +102,8 @@ parseValueList(const simdjson::dom::array &Args) {
   ResultTypes.reserve(Args.size());
   for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
-    simdjson::dom::array ValueNodeArray;
+    simdjson::dom::element Value = Element["value"];
+    case (Value.type()) {
     if (!Element["value"].get(ValueNodeArray)) {
       WasmEdge::uint64x2_t I64x2;
       std::string_view LaneType = Element["lane_type"];
@@ -184,6 +185,7 @@ parseValueList(const simdjson::dom::array &Args) {
       }
     }
   }
+  }
   return {Result, ResultTypes};
 }
 
@@ -196,7 +198,10 @@ parseExpectedList(const simdjson::dom::array &Args) {
   std::string_view Value;
   for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
-    if (!Element["value"].get(ValueNodeArray)) {
+    simdjson::dom::element Value = Element["value"];
+    switch(Value.type()) {
+    case simdjson::dom::element_type::ARRAY: {
+      simdjson::dom::array ValueNodeArray = Value.get_array();
       std::string StrValue;
       std::string_view LaneType = Element["lane_type"];
       for (std::string_view X : ValueNodeArray) {
@@ -206,11 +211,16 @@ parseExpectedList(const simdjson::dom::array &Args) {
       StrValue.pop_back();
       Result.emplace_back(std::string(Type) + std::string(LaneType),
                           std::move(StrValue));
-    } else if (!Element["value"].get(Value)) {
-      Result.emplace_back(std::string(Type), Value);
-    } else {
+      break;
+    } 
+    case simdjson::dom::element_type::STRING: {
+      std::string_view ValueStr = Value.get_string();
+      Result.emplace_back(std::string(Type), std::string(ValueStr));
+      break;
+    } 
+    default: 
       assumingUnreachable();
-    }
+  }
   }
   return Result;
 }
