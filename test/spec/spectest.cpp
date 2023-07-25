@@ -100,6 +100,7 @@ parseValueList(const simdjson::dom::array &Args) {
   std::vector<WasmEdge::ValType> ResultTypes;
   Result.reserve(Args.size());
   ResultTypes.reserve(Args.size());
+  simdjson::dom::array ValueNodeArray;
   for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
     if (!Element["value"].get(ValueNodeArray)) {
@@ -191,8 +192,8 @@ std::vector<std::pair<std::string, std::string>>
 parseExpectedList(const simdjson::dom::array &Args) {
   std::vector<std::pair<std::string, std::string>> Result;
   Result.reserve(Args.size());
-  simdjson::dom::array ValueNodeArray;
-  std::string_view Value;
+  //simdjson::dom::array ValueNodeArray;
+  //std::string_view Value;
   for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
     simdjson::dom::element Value = Element["value"];
