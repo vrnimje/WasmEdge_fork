@@ -102,8 +102,7 @@ parseValueList(const simdjson::dom::array &Args) {
   for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
     simdjson::dom::element Value = Element["value"];
-    switch(Value.type()) {
-    case simdjson::dom::element_type::ARRAY: {
+    if (Value.type() == simdjson::dom::element_type::ARRAY) {
       simdjson::dom::array ValueNodeArray = Value;
       WasmEdge::uint64x2_t I64x2;
       std::string_view LaneType = Element["lane_type"];
@@ -143,9 +142,7 @@ parseValueList(const simdjson::dom::array &Args) {
       }
       Result.emplace_back(I64x2);
       ResultTypes.emplace_back(WasmEdge::ValType::V128);
-      break;
-    }
-    case simdjson::dom::element_type::STRING: {
+    } else if (Value.type() == simdjson::dom::element_type::STRING) {
       std::string_view ValueStr = Value;
       if (Type == "externref"sv) {
         if (Value == "null"sv) {
@@ -185,10 +182,8 @@ parseValueList(const simdjson::dom::array &Args) {
       } else {
         assumingUnreachable();
       }
-      break;
-    }
-      default: 
-        break;
+    } else {
+      assumingUnreachable();
     }
   }
   return {Result, ResultTypes};
