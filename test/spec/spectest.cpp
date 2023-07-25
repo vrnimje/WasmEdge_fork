@@ -187,6 +187,8 @@ parseValueList(const simdjson::dom::array &Args) {
       }
       break;
     }
+      default: 
+        break;
     }
   }
   return {Result, ResultTypes};
