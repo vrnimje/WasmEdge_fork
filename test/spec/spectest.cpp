@@ -98,12 +98,13 @@ std::pair<std::vector<WasmEdge::ValVariant>, std::vector<WasmEdge::ValType>>
 parseValueList(const simdjson::dom::array &Args) {
   std::vector<WasmEdge::ValVariant> Result;
   std::vector<WasmEdge::ValType> ResultTypes;
-  Result.reserve(Args.size());
-  ResultTypes.reserve(Args.size());
-  simdjson::dom::array ValueNodeArray;
+  Result.reserve(Args.size());  ResultTypes.reserve(Args.size());
   for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
-    if (!Element["value"].get(ValueNodeArray)) {
+    simdjson::dom::element Value = Element["value"];
+    switch (Value.type()) {
+    case simdjson::dom::element_type::ARRAY: {
+      simdjson::dom::array ValueNodeArray = Value;
       WasmEdge::uint64x2_t I64x2;
       std::string_view LaneType = Element["lane_type"];
       if (LaneType == "i64"sv || LaneType == "f64"sv) {
@@ -142,15 +143,16 @@ parseValueList(const simdjson::dom::array &Args) {
       }
       Result.emplace_back(I64x2);
       ResultTypes.emplace_back(WasmEdge::ValType::V128);
-    } else {
-      std::string_view Value = Element["value"];
+    }
+    case simdjson::dom::element_type::STRING {
+      std::string_view ValueStr = Value;
       if (Type == "externref"sv) {
         if (Value == "null"sv) {
           Result.emplace_back(WasmEdge::UnknownRef());
         } else {
           // Add 0x1 uint32_t prefix in this externref index case.
           Result.emplace_back(WasmEdge::ExternRef(reinterpret_cast<void *>(
-              std::stoul(std::string(Value)) + 0x100000000ULL)));
+              std::stoul(std::string(ValueStr)) + 0x100000000ULL)));
         }
         ResultTypes.emplace_back(WasmEdge::ValType::ExternRef);
       } else if (Type == "funcref"sv) {
@@ -160,28 +162,29 @@ parseValueList(const simdjson::dom::array &Args) {
           // Add 0x1 uint32_t prefix in this funcref index case.
           Result.emplace_back(WasmEdge::FuncRef(
               reinterpret_cast<WasmEdge::Runtime::Instance::FunctionInstance *>(
-                  std::stoul(std::string(Value)) + 0x100000000ULL)));
+                  std::stoul(std::string(ValueStr)) + 0x100000000ULL)));
         }
         ResultTypes.emplace_back(WasmEdge::ValType::FuncRef);
       } else if (Type == "i32"sv) {
         Result.emplace_back(
-            static_cast<uint32_t>(std::stoul(std::string(Value))));
+            static_cast<uint32_t>(std::stoul(std::string(ValueStr))));
         ResultTypes.emplace_back(WasmEdge::ValType::I32);
       } else if (Type == "f32"sv) {
         Result.emplace_back(
-            static_cast<uint32_t>(std::stoul(std::string(Value))));
+            static_cast<uint32_t>(std::stoul(std::string(ValueStr))));
         ResultTypes.emplace_back(WasmEdge::ValType::F32);
       } else if (Type == "i64"sv) {
         Result.emplace_back(
-            static_cast<uint64_t>(std::stoull(std::string(Value))));
+            static_cast<uint64_t>(std::stoull(std::string(ValueStr))));
         ResultTypes.emplace_back(WasmEdge::ValType::I64);
       } else if (Type == "f64"sv) {
         Result.emplace_back(
-            static_cast<uint64_t>(std::stoull(std::string(Value))));
+            static_cast<uint64_t>(std::stoull(std::string(ValueStr))));
         ResultTypes.emplace_back(WasmEdge::ValType::F64);
       } else {
         assumingUnreachable();
       }
+    }
     }
   }
   return {Result, ResultTypes};
