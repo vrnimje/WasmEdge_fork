@@ -194,14 +194,11 @@ std::vector<std::pair<std::string, std::string>>
 parseExpectedList(const simdjson::dom::array &Args) {
   std::vector<std::pair<std::string, std::string>> Result;
   Result.reserve(Args.size());
-  //simdjson::dom::array ValueNodeArray;
-  //std::string_view Value;
   for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
     simdjson::dom::element Value = Element["value"];
-    switch(Value.type()) {
-    case simdjson::dom::element_type::ARRAY: {
-      simdjson::dom::array ValueNodeArray = Value.get_array();
+    if (Value.type() == simdjson::dom::element_type::ARRAY) {
+      simdjson::dom::array ValueNodeArray = Value;
       std::string StrValue;
       std::string_view LaneType = Element["lane_type"];
       for (std::string_view X : ValueNodeArray) {
@@ -211,18 +208,10 @@ parseExpectedList(const simdjson::dom::array &Args) {
       StrValue.pop_back();
       Result.emplace_back(std::string(Type) + std::string(LaneType),
                           std::move(StrValue));
-      break;
-    } 
-    case simdjson::dom::element_type::STRING: {
-      std::string_view ValueStr = Value.get_string();
+    } else if (Value.type() == simdjson::dom::element_type::STRING) {
+      std::string_view ValueStr = Value;
       Result.emplace_back(std::string(Type), std::string(ValueStr));
-      break;
     } 
-      default: {
-      assumingUnreachable();
-      break;
-    }
-  }
   }
   return Result;
 }
