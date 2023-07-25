@@ -102,7 +102,7 @@ parseValueList(const simdjson::dom::array &Args) {
   for (const simdjson::dom::object &Element : Args) {
     std::string_view Type = Element["type"];
     simdjson::dom::element Value = Element["value"];
-    switch (Value.type()) {
+    switch(Value.type()) {
     case simdjson::dom::element_type::ARRAY: {
       simdjson::dom::array ValueNodeArray = Value;
       WasmEdge::uint64x2_t I64x2;
