@@ -36,7 +36,7 @@ using namespace WasmEdge;
 
 // Preprocessing for set up aliasing.
 void resolveRegister(std::map<std::string, std::string> &Alias,
-                     simdjson::dom::array CmdArray) {
+                     simdjson::dom::array &CmdArray) {
   std::string_view OrgName;
   uint64_t LastModLine;
   for (const simdjson::dom::object &Cmd : CmdArray) {
@@ -603,8 +603,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
         return;
       }
       case CommandID::Action: {
-        const simdjson::dom::object Action = Cmd["action"].get_object();
-        const simdjson::dom::array Expected = Cmd["expected"];
+        const simdjson::dom::object &Action = Cmd["action"].get_object();
+        const simdjson::dom::array &Expected = Cmd["expected"];
         const uint64_t LineNumber = Cmd["line"];
         Invoke(Action, Expected, LineNumber);
         return;
@@ -615,8 +615,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
       }
       case CommandID::AssertReturn: {
         const uint64_t LineNumber = Cmd["line"];
-        const simdjson::dom::object Action = Cmd["action"].get_object();
-        const simdjson::dom::array Expected = Cmd["expected"];
+        const simdjson::dom::object &Action = Cmd["action"].get_object();
+        const simdjson::dom::array &Expected = Cmd["expected"];
         std::string_view ActType = Action["type"];
         if (ActType == "invoke"sv) {
           Invoke(Action, Expected, LineNumber);
@@ -629,7 +629,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
         return;
       }
       case CommandID::AssertTrap: {
-        const simdjson::dom::object Action = Cmd["action"].get_object();
+        const simdjson::dom::object &Action = Cmd["action"].get_object();
         const std::string_view Text = Cmd["text"];
         const uint64_t LineNumber = Cmd["line"];
         TrapInvoke(Action, std::string(Text), LineNumber);
