@@ -470,12 +470,12 @@ bool SpecTest::stringContains(std::string_view Expected,
 
 void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
   spdlog::info("{} {}", Proposal, UnitName);
-  auto FileName =
+  auto TestFileName =
       (TestsuiteRoot / Proposal / UnitName / (std::string(UnitName) + ".json"s))
           .string();
 
   simdjson::dom::parser Parser;
-  simdjson::dom::element Doc = Parser.load(FileName);
+  simdjson::dom::element Doc = Parser.load(TestFileName);
 
   std::map<std::string, std::string> Alias;
   std::string LastModName;
