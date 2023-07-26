@@ -53,7 +53,8 @@ jobs:
           export LD_LIBRARY_PATH="$(pwd)/build/lib/api:$LD_LIBRARY_PATH"
           cd build
           ./tools/wasmedge/wasmedge -v
-          ctest --output-on-failure
+          ctest
+          ctest --rerun-failed --output-on-failure
           cd -
       - name: Build WasmEdge using ${{ matrix.compiler }} with Coverage mode
         if: ${{ matrix.coverage }}
