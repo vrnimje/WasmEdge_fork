@@ -474,8 +474,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
       (TestsuiteRoot / Proposal / UnitName / (std::string(UnitName) + ".json"s))
           .string();
 
-  simdjson::dom::parser parser;
-  simdjson::dom::element Doc = parser.load(FName);
+  simdjson::dom::parser Parser;
+  simdjson::dom::element Doc = Parser.load(FName);
 
   std::map<std::string, std::string> Alias;
   std::string LastModName;
@@ -649,16 +649,16 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
         std::string_view Name = Cmd["filename"];
         const auto Filename =
             (TestsuiteRoot / Proposal / UnitName / Name).u8string();
-        Name = Cmd["text"];
-        TrapLoad(Filename, std::string(Name));
+        std::string_view Text = Cmd["text"];
+        TrapLoad(Filename, std::string(Text));
         return;
       }
       case CommandID::AssertInvalid: {
         std::string_view Name = Cmd["filename"];
         const auto Filename =
             (TestsuiteRoot / Proposal / UnitName / Name).u8string();
-        Name = Cmd["text"];
-        TrapValidate(Filename, std::string(Name));
+        std::string_view Text = Cmd["text"];
+        TrapValidate(Filename, std::string(Text));
         return;
       }
       case CommandID::AssertUnlinkable:
@@ -666,8 +666,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
         std::string_view Name = Cmd["filename"];
         const auto Filename =
             (TestsuiteRoot / Proposal / UnitName / Name).u8string();
-        Name = Cmd["text"];
-        TrapInstantiate(Filename, std::string(Name));
+        std::string_view Text = Cmd["text"];
+        TrapInstantiate(Filename, std::string(Text));
         return;
       }
       default:;
