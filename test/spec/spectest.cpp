@@ -470,12 +470,12 @@ bool SpecTest::stringContains(std::string_view Expected,
 
 void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
   spdlog::info("{} {}", Proposal, UnitName);
-  auto FName =
+  auto FileName =
       (TestsuiteRoot / Proposal / UnitName / (std::string(UnitName) + ".json"s))
           .string();
 
   simdjson::dom::parser Parser;
-  simdjson::dom::element Doc = Parser.load(FName);
+  simdjson::dom::element Doc = Parser.load(FileName);
 
   std::map<std::string, std::string> Alias;
   std::string LastModName;
@@ -603,8 +603,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
         return;
       }
       case CommandID::Action: {
-        const simdjson::dom::object &Action = Cmd["action"].get_object();
-        const simdjson::dom::array &Expected = Cmd["expected"];
+        const simdjson::dom::object Action = Cmd["action"].get_object();
+        const simdjson::dom::array Expected = Cmd["expected"];
         const uint64_t LineNumber = Cmd["line"];
         Invoke(Action, Expected, LineNumber);
         return;
@@ -615,8 +615,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
       }
       case CommandID::AssertReturn: {
         const uint64_t LineNumber = Cmd["line"];
-        const simdjson::dom::object &Action = Cmd["action"].get_object();
-        const simdjson::dom::array &Expected = Cmd["expected"];
+        const simdjson::dom::object Action = Cmd["action"].get_object();
+        const simdjson::dom::array Expected = Cmd["expected"];
         std::string_view ActType = Action["type"];
         if (ActType == "invoke"sv) {
           Invoke(Action, Expected, LineNumber);
@@ -629,7 +629,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
         return;
       }
       case CommandID::AssertTrap: {
-        const simdjson::dom::object &Action = Cmd["action"].get_object();
+        const simdjson::dom::object Action = Cmd["action"].get_object();
         const std::string_view Text = Cmd["text"];
         const uint64_t LineNumber = Cmd["line"];
         TrapInvoke(Action, std::string(Text), LineNumber);
