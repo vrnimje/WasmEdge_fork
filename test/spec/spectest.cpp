@@ -641,7 +641,8 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
       }
       case CommandID::AssertMalformed: {
         std::string_view ModType = Cmd["module_type"];
-        if (std::string(ModType) == "binary") {
+        std::string ModStr = (std::string) ModType;
+        if (ModStr == "binary") {
           // TODO: Wat is not supported in WasmEdge yet.
           return;
         }
