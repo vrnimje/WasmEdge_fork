@@ -629,7 +629,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
         return;
       }
       case CommandID::AssertTrap: {
-        const simdjson::dom::object &Action = Cmd["action"].get_object();
+        const simdjson::dom::object &Action = Cmd["action"];
         const std::string_view &Text = Cmd["text"];
         const uint64_t LineNumber = Cmd["line"];
         TrapInvoke(Action, std::string(Text), LineNumber);

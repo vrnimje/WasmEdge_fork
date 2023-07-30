@@ -78,5 +78,3 @@ target_link_libraries(wasmedgeTestSpec
   wasmedgeCommon
   ${GTEST_BOTH_LIBRARIES}
 )
-
-#Test comment
